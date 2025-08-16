@@ -217,7 +217,6 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
             final post = feedState.posts[index];
             return TwitterPostTile(
               post: post,
-              onTap: () => context.push('${AppRoutes.home}/post/${post.id}'),
             );
           } else if (feedState.isLoading) {
             // Loading indicator at bottom

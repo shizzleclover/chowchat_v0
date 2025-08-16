@@ -22,6 +22,7 @@ class _TwitterPostTileState extends ConsumerState<TwitterPostTile>
     with TickerProviderStateMixin {
   late AnimationController _likeController;
   late Animation<double> _likeScale;
+  bool _expanded = false;
 
   @override
   void initState() {
@@ -52,7 +53,15 @@ class _TwitterPostTileState extends ConsumerState<TwitterPostTile>
     }
 
     return InkWell(
-      onTap: widget.onTap,
+      onTap: () {
+        if (widget.onTap != null) {
+          widget.onTap!();
+        } else {
+          setState(() {
+            _expanded = !_expanded;
+          });
+        }
+      },
       child: Column(
         children: [
           Padding(
@@ -130,24 +139,39 @@ class _TwitterPostTileState extends ConsumerState<TwitterPostTile>
                 ),
               ),
             ),
-            IconButton(
-              onPressed: _showMore,
-              icon: const Icon(Icons.more_horiz_rounded, size: 20),
-              color: AppColors.mutedForeground,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  onPressed: () {
+                    setState(() { _expanded = !_expanded; });
+                  },
+                  icon: Icon(_expanded ? Icons.expand_less_rounded : Icons.expand_more_rounded, size: 20),
+                  color: AppColors.mutedForeground,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                ),
+                IconButton(
+                  onPressed: _openDetail,
+                  icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                  color: AppColors.mutedForeground,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                ),
+                IconButton(
+                  onPressed: _showMore,
+                  icon: const Icon(Icons.more_horiz_rounded, size: 20),
+                  color: AppColors.mutedForeground,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                ),
+              ],
             ),
           ],
         ),
         const SizedBox(height: 4),
         if (widget.post.content.isNotEmpty)
-          Text(
-            widget.post.content,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: isDark ? AppColors.darkForeground : AppColors.lightForeground,
-                  height: 1.35,
-                ),
-          ),
+          _buildContentText(isDark),
         if (widget.post.imageUrls.isNotEmpty) ...[
           const SizedBox(height: 8),
           _buildImage(),
@@ -157,6 +181,49 @@ class _TwitterPostTileState extends ConsumerState<TwitterPostTile>
         const SizedBox(height: 8),
         _buildActions(isLiked),
       ],
+    );
+  }
+
+  Widget _buildContentText(bool isDark) {
+    final content = widget.post.content;
+    final shouldTruncate = !_expanded && content.length > 180;
+    final display = shouldTruncate ? content.substring(0, 180) + '…' : content;
+    return GestureDetector(
+      onTap: () => setState(() { _expanded = !_expanded; }),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            display,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: isDark ? AppColors.darkForeground : AppColors.lightForeground,
+                  height: 1.35,
+                ),
+          ),
+          if (shouldTruncate)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                'Show more',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            )
+          else if (content.length > 180)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                'Show less',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -211,7 +278,7 @@ class _TwitterPostTileState extends ConsumerState<TwitterPostTile>
     final muted = AppColors.mutedForeground;
     return Row(
       children: [
-        _iconAction(Icons.chat_bubble_outline_rounded, _onComments, label: '${widget.post.commentsCount}', color: muted),
+        _iconAction(Icons.mode_comment_outlined, _onComments, label: '${widget.post.commentsCount}', color: muted),
         const SizedBox(width: 24),
         ScaleTransition(
           scale: _likeScale,
@@ -223,7 +290,7 @@ class _TwitterPostTileState extends ConsumerState<TwitterPostTile>
           ),
         ),
         const Spacer(),
-        _iconAction(Icons.share_rounded, _onShare, color: muted, label: 'Share'),
+        _iconAction(Icons.ios_share_rounded, _onShare, color: muted, label: 'Share'),
       ],
     );
   }
@@ -247,6 +314,10 @@ class _TwitterPostTileState extends ConsumerState<TwitterPostTile>
   }
 
   void _onComments() {
+    AppNavigation.goToPostDetail(context, widget.post.id);
+  }
+
+  void _openDetail() {
     AppNavigation.goToPostDetail(context, widget.post.id);
   }
 
