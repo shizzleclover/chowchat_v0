@@ -66,8 +66,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     
     final authState = ref.watch(authProvider);
     final user = authState.user;
-    final themeMode = ref.watch(themeProvider);
-    final isDark = themeMode == AppThemeMode.dark;
+    final isDark = ref.watch(isDarkModeProvider);
 
     if (user == null) {
       return const Scaffold(
@@ -105,8 +104,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   }
 
   Widget _buildSliverAppBar(dynamic user) {
-    final themeMode = ref.watch(themeProvider);
-    final isDark = themeMode == AppThemeMode.dark;
+    final isDark = ref.watch(isDarkModeProvider);
     
     return SliverAppBar(
       expandedHeight: 100,
@@ -149,11 +147,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                 value: 'theme',
                 child: Row(
                   children: [
-                    Icon(ref.watch(themeProvider) == AppThemeMode.dark
+                    Icon(ref.watch(isDarkModeProvider)
                         ? Icons.light_mode_rounded 
                         : Icons.dark_mode_rounded),
                     const SizedBox(width: 12),
-                    Text(ref.watch(themeProvider) == AppThemeMode.dark
+                    Text(ref.watch(isDarkModeProvider)
                         ? 'Light Mode' 
                         : 'Dark Mode'),
                   ],

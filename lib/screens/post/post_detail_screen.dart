@@ -78,8 +78,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen>
 
   @override
   Widget build(BuildContext context) {
-    final themeMode = ref.watch(themeProvider);
-    final isDark = themeMode == AppThemeMode.dark;
+    final isDark = ref.watch(isDarkModeProvider);
     
     if (widget.postId == null) {
       return _buildErrorState('Post not found', isDark);
@@ -819,7 +818,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen>
       builder: (context) => Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: ref.watch(themeProvider) == AppThemeMode.dark 
+          color: ref.watch(isDarkModeProvider) 
               ? AppColors.darkCard 
               : AppColors.lightCard,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -859,7 +858,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen>
       builder: (context) => Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: ref.watch(themeProvider) == AppThemeMode.dark 
+          color: ref.watch(isDarkModeProvider) 
               ? AppColors.darkCard 
               : AppColors.lightCard,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),

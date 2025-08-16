@@ -60,8 +60,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
     
     final feedState = ref.watch(feedProvider);
     final authState = ref.watch(authProvider);
-    final themeMode = ref.watch(themeProvider);
-    final isDark = themeMode == AppThemeMode.dark;
+    final isDark = ref.watch(isDarkModeProvider);
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
@@ -96,8 +95,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
   }
 
   Widget _buildSliverAppBar(String userName) {
-    final themeMode = ref.watch(themeProvider);
-    final isDark = themeMode == AppThemeMode.dark;
+    final isDark = ref.watch(isDarkModeProvider);
     
     return SliverAppBar(
       floating: true,
