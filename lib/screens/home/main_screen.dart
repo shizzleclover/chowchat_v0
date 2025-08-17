@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../config/app_color.dart';
+import '../../providers/theme_provider.dart';
 import '../../providers/auth_provider.dart';
 import 'feed_screen.dart';
 import '../search/search_screen.dart';
@@ -16,8 +17,10 @@ class MainScreen extends ConsumerStatefulWidget {
   ConsumerState<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends ConsumerState<MainScreen> {
+class _MainScreenState extends ConsumerState<MainScreen> with TickerProviderStateMixin {
   int _currentIndex = 0;
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
 
   final List<Widget> _screens = [
     const FeedScreen(),
@@ -58,6 +61,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final isDark = ref.watch(isDarkModeProvider);
     
     if (authState.user == null) {
       return const Scaffold(
@@ -68,25 +72,30 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.lightBackground,
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
       body: SafeArea(
-        child: IndexedStack(
-          index: _currentIndex,
-          children: _screens,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          switchInCurve: Curves.easeOut,
+          switchOutCurve: Curves.easeIn,
+          child: KeyedSubtree(
+            key: ValueKey(_currentIndex),
+            child: _screens[_currentIndex],
+          ),
         ),
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: AppColors.lightCard,
+          color: isDark ? AppColors.darkCard : AppColors.lightCard,
           border: Border(
             top: BorderSide(
-              color: AppColors.lightBorder,
+              color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
               width: 0.5,
             ),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withValues(alpha: 0.12),
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
@@ -117,6 +126,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   }
 
   Widget _buildNavItem(BottomNavigationBarItem item, int index, bool isSelected) {
+    final isDark = ref.watch(isDarkModeProvider);
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -128,7 +138,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           color: isSelected 
-              ? AppColors.lightPrimary.withValues(alpha: 0.1)
+              ? (isDark ? AppColors.darkPrimary : AppColors.lightPrimary).withValues(alpha: 0.12)
               : Colors.transparent,
         ),
         child: Column(
@@ -139,8 +149,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                   ? (item.activeIcon as Icon).icon
                   : (item.icon as Icon).icon,
               color: isSelected 
-                  ? AppColors.lightPrimary
-                  : AppColors.lightMutedForeground,
+                  ? (isDark ? AppColors.darkPrimary : AppColors.lightPrimary)
+                  : (isDark ? AppColors.darkMutedForeground : AppColors.lightMutedForeground),
               size: 24,
             ),
             const SizedBox(height: 2),
@@ -150,8 +160,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 fontSize: 10,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: isSelected 
-                    ? AppColors.lightPrimary
-                    : AppColors.lightMutedForeground,
+                    ? (isDark ? AppColors.darkPrimary : AppColors.lightPrimary)
+                    : (isDark ? AppColors.darkMutedForeground : AppColors.lightMutedForeground),
               ),
             ),
           ],

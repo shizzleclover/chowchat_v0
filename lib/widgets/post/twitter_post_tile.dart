@@ -7,6 +7,8 @@ import '../../providers/feed_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../config/app_color.dart';
 import '../../routes/app_router.dart';
+import '../common/image_viewer.dart';
+import 'package:flutter/services.dart';
 
 class TwitterPostTile extends ConsumerStatefulWidget {
   final PostModel post;
@@ -174,7 +176,7 @@ class _TwitterPostTileState extends ConsumerState<TwitterPostTile>
           _buildContentText(isDark),
         if (widget.post.imageUrls.isNotEmpty) ...[
           const SizedBox(height: 8),
-          _buildImage(),
+          _buildImagesGrid(widget.post.imageUrls),
         ],
         const SizedBox(height: 8),
         _buildMeta(),
@@ -227,15 +229,119 @@ class _TwitterPostTileState extends ConsumerState<TwitterPostTile>
     );
   }
 
-  Widget _buildImage() {
-    final url = widget.post.imageUrls.first;
+  Widget _buildImagesGrid(List<String> urls) {
+    if (urls.length == 1) {
+      return GestureDetector(
+        onTap: () => _openViewer(0),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: CachedNetworkImage(
+            imageUrl: urls.first,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: 220,
+          ),
+        ),
+      );
+    }
+
+    if (urls.length == 2) {
+      return Row(
+        children: [
+          Expanded(child: GestureDetector(onTap: () => _openViewer(0), child: _gridImage(urls[0], height: 200, rightRadius: 6))),
+          const SizedBox(width: 6),
+          Expanded(child: GestureDetector(onTap: () => _openViewer(1), child: _gridImage(urls[1], height: 200, leftRadius: 6))),
+        ],
+      );
+    }
+
+    if (urls.length == 3) {
+      return Row(
+        children: [
+          Expanded(child: GestureDetector(onTap: () => _openViewer(0), child: _gridImage(urls[0], height: 200, rightRadius: 6))),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              children: [
+                GestureDetector(onTap: () => _openViewer(1), child: _gridImage(urls[1], height: 97, bottomRadius: 6)),
+                const SizedBox(height: 6),
+                GestureDetector(onTap: () => _openViewer(2), child: _gridImage(urls[2], height: 97, topRadius: 6)),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    // 4 or more -> show first 4 with overlay count
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            children: [
+              GestureDetector(onTap: () => _openViewer(0), child: _gridImage(urls[0], height: 97, rightRadius: 6, bottomRadius: 6)),
+              const SizedBox(height: 6),
+              GestureDetector(onTap: () => _openViewer(2), child: _gridImage(urls[2], height: 97, rightRadius: 6, topRadius: 6)),
+            ],
+          ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Column(
+            children: [
+              GestureDetector(onTap: () => _openViewer(1), child: _gridImage(urls[1], height: 97, leftRadius: 6, bottomRadius: 6)),
+              const SizedBox(height: 6),
+              Stack(
+                children: [
+                  GestureDetector(onTap: () => _openViewer(3), child: _gridImage(urls[3], height: 97, leftRadius: 6, topRadius: 6)),
+                  if (urls.length > 4)
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.35),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '+${urls.length - 4}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _gridImage(
+    String url, {
+    required double height,
+    double leftRadius = 0,
+    double rightRadius = 0,
+    double topRadius = 0,
+    double bottomRadius = 0,
+  }) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.only(
+        topLeft: Radius.circular(leftRadius > 0 ? leftRadius : topRadius),
+        bottomLeft: Radius.circular(leftRadius > 0 ? leftRadius : bottomRadius),
+        topRight: Radius.circular(rightRadius > 0 ? rightRadius : topRadius),
+        bottomRight: Radius.circular(rightRadius > 0 ? rightRadius : bottomRadius),
+      ),
       child: CachedNetworkImage(
         imageUrl: url,
         fit: BoxFit.cover,
         width: double.infinity,
-        height: 220,
+        height: height,
       ),
     );
   }
@@ -297,7 +403,10 @@ class _TwitterPostTileState extends ConsumerState<TwitterPostTile>
 
   Widget _iconAction(IconData icon, VoidCallback onTap, {required String label, required Color color}) {
     return InkWell(
-      onTap: onTap,
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
       borderRadius: BorderRadius.circular(6),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -322,6 +431,7 @@ class _TwitterPostTileState extends ConsumerState<TwitterPostTile>
   }
 
   Future<void> _onLike() async {
+    HapticFeedback.lightImpact();
     try {
       await ref.read(likeProvider.notifier).toggleLike(widget.post.id);
       final isLiked = ref.read(likeProvider)[widget.post.id] == true;
@@ -335,5 +445,14 @@ class _TwitterPostTileState extends ConsumerState<TwitterPostTile>
   void _onShare() {}
 
   void _showMore() {}
+
+  void _openViewer(int index) {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        pageBuilder: (_, __, ___) => ImageViewer(imageUrls: widget.post.imageUrls, initialIndex: index),
+      ),
+    );
+  }
 }
 
